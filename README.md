@@ -1,0 +1,107 @@
+# Carry Protocol
+
+**Moving data across divides where infrastructure doesn't reach.**
+
+Named after the carriers who walk messages across mountains where no signal crosses — where the rock itself scrambles every frequency, where satellites fail, where the only reliable instruments are mechanical, and the only reliable network is a person carrying a parcel to the next station.
+
+The Carry Protocol is a real protocol for a real problem: **moving data between edge devices that may never have simultaneous connectivity.** Sensor networks in remote terrain. Devices in disaster zones. Mesh networks where nodes appear and disappear. Anywhere the internet doesn't reach but data still needs to arrive.
+
+---
+
+## Core Principles
+
+1. **Offline-first.** No assumption of connectivity. Ever. Parcels are packed, stored locally, and forwarded when — or if — a connection appears.
+
+2. **Store-and-forward.** Every node is a relay station. Data hops from node to node, resting at each waypoint until the next leg is available. A delivery might take minutes or days. The protocol doesn't care. The parcel arrives.
+
+3. **Conservation fence.** Every hop validates parcel integrity, checks expiry, enforces power budgets, and logs the transition. A parcel that fails the fence is held, not dropped — because in a carry network, you don't throw things away. You hold them until they can move or until they expire.
+
+4. **Wattage-aware.** Edge devices run on batteries, solar, scavenged power. The protocol minimizes transmission size (compression), defers non-urgent traffic, and tracks power cost per hop. A carrier doesn't sprint; a carrier conserves.
+
+5. **Mechanical simplicity.** The protocol uses basic primitives — checksums, timestamps, hop logs — because complex cryptography requires compute power that edge devices may not have. Security is layered on top when available; the base protocol is just a reliable envelope.
+
+---
+
+## The Metaphor
+
+In the Carry stories, the carrier guild moves parcels across a mountain range where piezoelectric rock destroys every electronic signal. The route has nine relay stations. Each station keeper receives parcels, validates them, and passes them to the next carrier when conditions allow. The system has worked for two hundred years.
+
+The Carry Protocol works the same way:
+
+| The Divide | The Network |
+|---|---|
+| Carrier | Edge node |
+| Parcel | Data parcel (envelope + payload + fence) |
+| Relay station | Store-and-forward waypoint |
+| Station keeper | Local persistence layer |
+| Route (cairns) | Planned sequence of hops |
+| Weather delay | Connection unavailable |
+| Carrying capacity | Power budget |
+| Guild motto: "We carry." | The protocol's job: deliver. |
+
+---
+
+## Quick Start
+
+```bash
+pip install carry-protocol
+```
+
+```python
+from carry import Carrier, FenceConfig, Route, Waypoint
+
+# Create an edge node
+carrier = Carrier(node_id="sensor-alpha")
+fence = FenceConfig(
+    checksum_algo="blake2b",
+    max_hops=16,
+    default_ttl_hours=168,  # 1 week
+    power_budget_mw=500,
+    compression="gzip",
+)
+
+# Pack a message
+parcel = carrier.pack(
+    message={"temperature": -12.4, "wind_speed": 47, "timestamp": "2026-07-13T01:00:00Z"},
+    fence_config=fence,
+    destination="gateway-beta",
+)
+
+# The parcel is stored locally until a route is available
+route = Route.from_waypoints([
+    Waypoint("sensor-alpha"),
+    Waypoint("relay-1"),
+    Waypoint("gateway-beta"),
+])
+
+receipt = carrier.carry(parcel, route)
+
+# On the receiving end
+receiver = Carrier(node_id="gateway-beta")
+message = receiver.receive(parcel)
+print(message.data)  # {"temperature": -12.4, "wind_speed": 47, ...}
+```
+
+---
+
+## Installation (from source)
+
+```bash
+git clone https://github.com/SuperInstance/carry-protocol.git
+cd carry-protocol
+pip install -e .
+```
+
+---
+
+## Protocol Specification
+
+See [SPEC.md](./SPEC.md) for the full protocol specification.
+
+## License
+
+MIT — see [LICENSE](./LICENSE).
+
+---
+
+*"The mountain doesn't need you to cross it. You cross it because someone on the other side needs to hear from you."*
